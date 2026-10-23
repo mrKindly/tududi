@@ -7,7 +7,6 @@ const {
     Note,
     Permission,
     TaskAttachment,
-    sequelize,
 } = require('../../models');
 const { createTestUser } = require('../helpers/testUtils');
 
@@ -56,10 +55,6 @@ describe('Project Sharing Integration Tests', () => {
             target_user_email: sharedUser.email,
             access_level: 'rw',
         });
-    });
-
-    afterAll(async () => {
-        await sequelize.close();
     });
 
     describe('Project visibility', () => {
@@ -358,7 +353,9 @@ describe('Project Sharing Integration Tests', () => {
                 priority: 1,
                 status: 0,
             });
+            expect(taskResponse.status).toBe(201);
             const taskInSharedProject = taskResponse.body;
+            expect(taskInSharedProject.uid).toBeTruthy();
 
             const response = await sharedUserAgent.get(
                 `/api/task/${taskInSharedProject.uid}/completion-time`
@@ -411,10 +408,13 @@ describe('Project Sharing Integration Tests', () => {
             // Owner creates a task in the shared project
             const taskResponse = await ownerAgent.post('/api/task').send({
                 name: 'Task with attachments in shared project',
-                project_id: project.id,
+                project_uid: project.uid,
                 priority: 1,
                 status: 0,
             });
+
+            expect(taskResponse.status).toBe(201);
+            expect(taskResponse.body.uid).toBeTruthy();
             taskInSharedProject = taskResponse.body;
         });
 
